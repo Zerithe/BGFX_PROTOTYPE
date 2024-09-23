@@ -1,0 +1,1 @@
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.glsl" --type vertex -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE vertex_shader1.bin" --platform windows

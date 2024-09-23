@@ -13,8 +13,9 @@ endif()
 
 project ("BGFX_PROTOTYPE")
 
+
 # Add source to this project's executable.
-add_executable (BGFX_PROTOTYPE "BGFX_PROTOTYPE.cpp" "BGFX_PROTOTYPE.h" )
+add_executable (BGFX_PROTOTYPE "BGFX_PROTOTYPE.cpp" "BGFX_PROTOTYPE.h"   "InputManager.cpp" "InputManager.h" "Camera.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET BGFX_PROTOTYPE PROPERTY CXX_STANDARD 20)
@@ -24,3 +25,4 @@ endif()
 add_subdirectory(./bgfx.cmake)
 add_subdirectory(./glfw)
 target_link_libraries(BGFX_PROTOTYPE PRIVATE bgfx bx bimg glfw)
+target_include_directories(BGFX_PROTOTYPE PUBLIC "bgfx/examples/common")

@@ -2,11 +2,23 @@
 //
 
 #include <iostream>
+#include <vector>
+#include <fstream>
+#include "InputManager.h"
+#include "Camera.h"
+
 
 #include "BGFX_PROTOTYPE.h"
 #include <bgfx/bgfx.h>
 #include <bx/uint32_t.h>
 #include <bgfx/platform.h>
+#include <bx/commandline.h>
+#include <bx/endian.h>
+#include <bx/math.h>
+#include <bx/readerwriter.h>
+#include <bx/string.h>
+
+
 
 #include <GLFW/glfw3.h>
 #if defined(_WIN32)
@@ -16,8 +28,88 @@
 
 using namespace std;
 
-#define WNDW_WIDTH 1920
-#define WNDW_HEIGHT 1080
+#define WNDW_WIDTH 1600
+#define WNDW_HEIGHT 900
+
+static bx::FileReaderI* s_fileReader = NULL;
+
+//-----------------------------------------------------------------------
+
+static const bgfx::Memory* loadMem(bx::FileReaderI* _reader, const bx::FilePath& _filePath)
+{
+    if (bx::open(_reader, _filePath))
+    {
+        uint32_t size = (uint32_t)bx::getSize(_reader);
+        const bgfx::Memory* mem = bgfx::alloc(size + 1);
+        bx::read(_reader, mem->data, size, bx::ErrorAssert{});
+        bx::close(_reader);
+        mem->data[mem->size - 1] = '\0';
+        return mem;
+    }
+
+    //DBG("Failed to load %s.", _filePath.getCPtr());
+    return NULL;
+}
+
+//static bgfx::ShaderHandle loadShader(bx::FileReaderI* _reader, const bx::StringView& _name)
+//{
+//    bx::FilePath filePath("./");
+//
+//    char fileName[512];
+//    bx::strCopy(fileName, BX_COUNTOF(fileName), _name);
+//    bx::strCat(fileName, BX_COUNTOF(fileName), ".bin");
+//
+//    filePath.join(fileName);
+//
+//    bgfx::ShaderHandle handle = bgfx::createShader(loadMem(_reader, filePath.getCPtr()));
+//    bgfx::setName(handle, _name.getPtr(), _name.getLength());
+//
+//    return handle;
+//}
+//
+//bgfx::ProgramHandle loadProgram(bx::FileReaderI* _reader, const bx::StringView& _vsName, const bx::StringView& _fsName)
+//{
+//    bgfx::ShaderHandle vsh = loadShader(_reader, _vsName);
+//    bgfx::ShaderHandle fsh = BGFX_INVALID_HANDLE;
+//    if (!_fsName.isEmpty())
+//    {
+//        fsh = loadShader(_reader, _fsName);
+//    }
+//
+//    return bgfx::createProgram(vsh, fsh, true /* destroy shaders when program is destroyed */);
+//}
+//
+//bgfx::ProgramHandle loadProgram(const bx::StringView& _vsName, const bx::StringView& _fsName)
+//{
+//    return loadProgram(s_fileReader, _vsName, _fsName);
+//}
+
+
+
+//-----------------------------------------------------------------------
+
+bgfx::ShaderHandle loadShader(const char* shaderPath)
+{
+    std::ifstream file(shaderPath, std::ios::binary);
+    if (!file)
+    {
+        std::cerr << "Failed to load shader: " << shaderPath << std::endl;
+        return BGFX_INVALID_HANDLE;
+    }
+
+    file.seekg(0, std::ios::end);
+    std::streampos fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(static_cast<size_t>(fileSize));
+    file.read(buffer.data(), fileSize);
+
+    const bgfx::Memory* mem = bgfx::copy(buffer.data(), static_cast<uint32_t>(fileSize));
+    cout << "shaders loaded" << endl;
+    return bgfx::createShader(mem);
+}
+
+//-----------------------------------------------------------------------
 
 struct PosColorVertex
 {
@@ -55,6 +147,44 @@ static const uint16_t cubeTriList[] =
     6, 3, 7,
 };
 
+//-----------------------------------------------------------------------
+
+
+void updateCamera(Camera& camera, float deltaTime)
+{
+	const float cameraSpeed = 2.5f * deltaTime;
+	if (InputManager::isKeyPressed(GLFW_KEY_W))
+		camera.position = bx::mad(camera.front, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
+	if (InputManager::isKeyPressed(GLFW_KEY_S))
+		camera.position = bx::mad(camera.front, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
+	if (InputManager::isKeyPressed(GLFW_KEY_A))
+		camera.position = bx::mad(camera.right, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
+	if (InputManager::isKeyPressed(GLFW_KEY_D))
+		camera.position = bx::mad(camera.right, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
+
+	double x, y;
+	InputManager::getMouseMovement(&x, &y);
+	const float sensitivity = 0.1f;
+	camera.yaw += x * sensitivity;
+	camera.pitch += y * sensitivity;
+
+	if (camera.pitch > 89.0f)
+		camera.pitch = 89.0f;
+	if (camera.pitch < -89.0f)
+		camera.pitch = -89.0f;
+
+    bx::Vec3 direction = bx::Vec3(cos(bx::toRad(camera.yaw)) * cos(bx::toRad(camera.pitch)), sin(bx::toRad(camera.pitch)), sin(bx::toRad(camera.yaw)) * cos(bx::toRad(camera.pitch)));
+	camera.front = bx::normalize(direction);
+
+	camera.right = bx::normalize(bx::cross(camera.front, bx::Vec3(0.0f, 1.0f, 0.0f)));
+	camera.up = bx::normalize(bx::cross(camera.right, camera.front));
+
+}
+
+
+//-----------------------------------------------------------------------
+
+
 static bool s_showStats = false;
 
 static void glfw_errorCallback(int error, const char* description)
@@ -74,6 +204,8 @@ int main(void)
     GLFWwindow* window = glfwCreateWindow(WNDW_WIDTH, WNDW_HEIGHT, "BGFX_PROTOTYPE", NULL, NULL);
 
     glfwSetKeyCallback(window, glfw_keyCallback);
+
+    InputManager::initialize(window);
     
     bgfx::renderFrame();
 
@@ -88,12 +220,36 @@ int main(void)
     bgfx::setViewRect(0, 0, 0, WNDW_WIDTH, WNDW_HEIGHT);
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x07374ecff, 1.0f, 0);
 
+    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
+    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cubes.bin");
+    bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
+    
+    //Mesh* bunny = meshLoad("meshes/bunny.bin");
+
+    bgfx::VertexLayout layout;
+    layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true, true)
+        .end();
+
+    bgfx::VertexBufferHandle vbh_cube = bgfx::createVertexBuffer(
+        bgfx::makeRef(cubeVertices, sizeof(cubeVertices)),
+        layout
+    );
+
+    bgfx::IndexBufferHandle ibh_cube = bgfx::createIndexBuffer(
+        bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
+    );
+
+    Camera camera;
 
     while (!glfwWindowShouldClose(window)) {
         // Poll events
         glfwPollEvents();
 
         bgfx::touch(0);
+
+		InputManager::update(camera, 0.016f);
 
         // Use debug font to print information about this example.
         bgfx::dbgTextClear();
@@ -106,10 +262,42 @@ int main(void)
         // Enable stats or debug text.
         bgfx::setDebug(s_showStats ? BGFX_DEBUG_STATS : BGFX_DEBUG_TEXT);
 
+        const bx::Vec3 at = { 0.0f, 1.0f,  0.0f };
+        const bx::Vec3 eye = { 0.0f, 1.0f, -2.5f };
+
+        {
+            float view[16];
+            //bx::mtxLookAt(view, eye, at);
+            bx::mtxLookAt(view, camera.position, bx::add(camera.position, camera.front), camera.up);
+
+
+            float proj[16];
+            //bx::mtxProj(proj, 60.0f, float(WNDW_WIDTH) / float(WNDW_HEIGHT), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+            bx::mtxProj(proj, 60.0f, float(WNDW_WIDTH) / float(WNDW_HEIGHT), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+            bgfx::setViewTransform(0, view, proj);
+
+            // Set view 0 default viewport.
+            bgfx::setViewRect(0, 0, 0, uint16_t(WNDW_WIDTH), uint16_t(WNDW_HEIGHT));
+
+        }
+
+        float mtx[16];
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.1f, -0.7f, 0.1f); // Scale and position the cube
+        bgfx::setTransform(mtx);
+
+        bgfx::setVertexBuffer(0, vbh_cube);
+        bgfx::setIndexBuffer(ibh_cube);
+        bgfx::submit(0, program);
+        //meshSubmit(bunny, 0, program, mtx);
+
+        
+
+
         bgfx::frame();
     }
 
     bgfx::shutdown();
+	glfwDestroyWindow(window);
     glfwTerminate();
 
 	return 0;
