@@ -221,8 +221,8 @@ int main(void)
     bgfx::setViewRect(0, 0, 0, WNDW_WIDTH, WNDW_HEIGHT);
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x07374ecff, 1.0f, 0);
 
-    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_mesh.bin");
-    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_mesh.bin");
+    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cube.bin");
+    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cube.bin");
     bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
     
 
@@ -250,6 +250,8 @@ int main(void)
 
     bgfx::VertexBufferHandle vbh = ObjLoader::createVertexBuffer(vertices);
     bgfx::IndexBufferHandle ibh = ObjLoader::createIndexBuffer(indices);
+
+    bgfx::UniformHandle u_time = bgfx::createUniform("u_time", bgfx::UniformType::Vec4);
 
     Camera camera;
 
@@ -296,10 +298,14 @@ int main(void)
         bgfx::setTransform(mtx);
 
 
+		float timevalue = float(glfwGetTime());
+
+		bgfx::setUniform(u_time, &timevalue);
+
         bgfx::setVertexBuffer(0, vbh);
         bgfx::setIndexBuffer(ibh);
-        //bgfx::setVertexBuffer(0, vbh_cube);
-        //bgfx::setIndexBuffer(ibh_cube);
+        bgfx::setVertexBuffer(0, vbh_cube);
+        bgfx::setIndexBuffer(ibh_cube);
         bgfx::submit(0, program);
         //meshSubmit(bunny, 0, program, mtx);
 
