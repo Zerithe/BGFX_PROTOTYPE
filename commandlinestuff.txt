@@ -1,1 +1,10 @@
-shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.glsl" --type vertex -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE vertex_shader1.bin" --platform windows
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.sc" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.bin" --platform windows -p 330 --type vertex
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\fragment_shader1.sc" --type fragment -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\fragment_shader1.bin" --platform windows -p 330
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\simplevert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\simplevert.bin" --platform windows -p 330 --type vertex
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.glsl" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.bin" --platform windows -p 330 --type vertex --raw
+
+
+shaderc -f simplevert.sc -o simplevert.bin --platform windows -p 330 --type vertex

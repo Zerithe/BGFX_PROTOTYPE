@@ -25,7 +25,6 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 #endif
-#include "ObjLoader.h" // Add this new include
 
 using namespace std;
 
@@ -221,10 +220,11 @@ int main(void)
     bgfx::setViewRect(0, 0, 0, WNDW_WIDTH, WNDW_HEIGHT);
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x07374ecff, 1.0f, 0);
 
-    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_mesh.bin");
-    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_mesh.bin");
+    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
+    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cubes.bin");
     bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
     
+    //Mesh* bunny = meshLoad("meshes/bunny.bin");
 
     bgfx::VertexLayout layout;
     layout.begin()
@@ -240,16 +240,6 @@ int main(void)
     bgfx::IndexBufferHandle ibh_cube = bgfx::createIndexBuffer(
         bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
     );
-
-    std::vector<ObjLoader::Vertex> vertices;
-    std::vector<uint16_t> indices;
-    if (!ObjLoader::loadObj("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\bunny.obj", vertices, indices)) {
-        std::cerr << "Failed to load OBJ file" << std::endl;
-        return -1;
-    }
-
-    bgfx::VertexBufferHandle vbh = ObjLoader::createVertexBuffer(vertices);
-    bgfx::IndexBufferHandle ibh = ObjLoader::createIndexBuffer(indices);
 
     Camera camera;
 
@@ -295,11 +285,8 @@ int main(void)
         bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.1f, -0.7f, 0.1f); // Scale and position the cube
         bgfx::setTransform(mtx);
 
-
-        bgfx::setVertexBuffer(0, vbh);
-        bgfx::setIndexBuffer(ibh);
-        //bgfx::setVertexBuffer(0, vbh_cube);
-        //bgfx::setIndexBuffer(ibh_cube);
+        bgfx::setVertexBuffer(0, vbh_cube);
+        bgfx::setIndexBuffer(ibh_cube);
         bgfx::submit(0, program);
         //meshSubmit(bunny, 0, program, mtx);
 
