@@ -17,6 +17,8 @@
 #include <bx/math.h>
 #include <bx/readerwriter.h>
 #include <bx/string.h>
+#include "bgfx.cmake/bgfx/examples/common/bgfx_utils.h"
+#include <bgfx/embedded_shader.h>
 
 
 
@@ -25,6 +27,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 #endif
+#include "ObjLoader.h" // Add this new include
 
 using namespace std;
 
@@ -152,32 +155,32 @@ static const uint16_t cubeTriList[] =
 
 void updateCamera(Camera& camera, float deltaTime)
 {
-	const float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::isKeyPressed(GLFW_KEY_W))
-		camera.position = bx::mad(camera.front, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
-	if (InputManager::isKeyPressed(GLFW_KEY_S))
-		camera.position = bx::mad(camera.front, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
-	if (InputManager::isKeyPressed(GLFW_KEY_A))
-		camera.position = bx::mad(camera.right, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
-	if (InputManager::isKeyPressed(GLFW_KEY_D))
-		camera.position = bx::mad(camera.right, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
+    const float cameraSpeed = 2.5f * deltaTime;
+    if (InputManager::isKeyPressed(GLFW_KEY_W))
+        camera.position = bx::mad(camera.front, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
+    if (InputManager::isKeyPressed(GLFW_KEY_S))
+        camera.position = bx::mad(camera.front, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
+    if (InputManager::isKeyPressed(GLFW_KEY_A))
+        camera.position = bx::mad(camera.right, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
+    if (InputManager::isKeyPressed(GLFW_KEY_D))
+        camera.position = bx::mad(camera.right, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
 
-	double x, y;
-	InputManager::getMouseMovement(&x, &y);
-	const float sensitivity = 0.1f;
-	camera.yaw += x * sensitivity;
-	camera.pitch += y * sensitivity;
+    double x, y;
+    InputManager::getMouseMovement(&x, &y);
+    const float sensitivity = 0.1f;
+    camera.yaw += x * sensitivity;
+    camera.pitch += y * sensitivity;
 
-	if (camera.pitch > 89.0f)
-		camera.pitch = 89.0f;
-	if (camera.pitch < -89.0f)
-		camera.pitch = -89.0f;
+    if (camera.pitch > 89.0f)
+        camera.pitch = 89.0f;
+    if (camera.pitch < -89.0f)
+        camera.pitch = -89.0f;
 
     bx::Vec3 direction = bx::Vec3(cos(bx::toRad(camera.yaw)) * cos(bx::toRad(camera.pitch)), sin(bx::toRad(camera.pitch)), sin(bx::toRad(camera.yaw)) * cos(bx::toRad(camera.pitch)));
-	camera.front = bx::normalize(direction);
+    camera.front = bx::normalize(direction);
 
-	camera.right = bx::normalize(bx::cross(camera.front, bx::Vec3(0.0f, 1.0f, 0.0f)));
-	camera.up = bx::normalize(bx::cross(camera.right, camera.front));
+    camera.right = bx::normalize(bx::cross(camera.front, bx::Vec3(0.0f, 1.0f, 0.0f)));
+    camera.up = bx::normalize(bx::cross(camera.right, camera.front));
 
 }
 
@@ -206,7 +209,7 @@ int main(void)
     glfwSetKeyCallback(window, glfw_keyCallback);
 
     InputManager::initialize(window);
-    
+
     bgfx::renderFrame();
 
     bgfx::Init bgfxinit;
@@ -222,9 +225,9 @@ int main(void)
 
     bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
     bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cubes.bin");
+
     bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
-    
-    //Mesh* bunny = meshLoad("meshes/bunny.bin");
+
 
     bgfx::VertexLayout layout;
     layout.begin()
@@ -241,6 +244,18 @@ int main(void)
         bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
     );
 
+    std::vector<ObjLoader::Vertex> vertices;
+    std::vector<uint16_t> indices;
+    if (!ObjLoader::loadObj("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\testhatch.obj", vertices, indices)) {
+        std::cerr << "Failed to load OBJ file" << std::endl;
+        return -1;
+    }
+
+    bgfx::VertexBufferHandle vbh = ObjLoader::createVertexBuffer(vertices);
+    bgfx::IndexBufferHandle ibh = ObjLoader::createIndexBuffer(indices);
+
+    bgfx::UniformHandle u_time = bgfx::createUniform("u_time", bgfx::UniformType::Vec4);
+
     Camera camera;
 
     while (!glfwWindowShouldClose(window)) {
@@ -249,7 +264,7 @@ int main(void)
 
         bgfx::touch(0);
 
-		InputManager::update(camera, 0.016f);
+        InputManager::update(camera, 0.016f);
 
         // Use debug font to print information about this example.
         bgfx::dbgTextClear();
@@ -285,22 +300,29 @@ int main(void)
         bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.1f, -0.7f, 0.1f); // Scale and position the cube
         bgfx::setTransform(mtx);
 
+
+        float timevalue = float(glfwGetTime());
+
+        //bgfx::setUniform(u_time, &timevalue);
+
+        //bgfx::setVertexBuffer(0, vbh);
+        //bgfx::setIndexBuffer(ibh);
         bgfx::setVertexBuffer(0, vbh_cube);
         bgfx::setIndexBuffer(ibh_cube);
         bgfx::submit(0, program);
         //meshSubmit(bunny, 0, program, mtx);
 
-        
+
 
 
         bgfx::frame();
     }
 
     bgfx::shutdown();
-	glfwDestroyWindow(window);
+    glfwDestroyWindow(window);
     glfwTerminate();
 
-	return 0;
+    return 0;
 }
 
 

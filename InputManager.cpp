@@ -18,7 +18,7 @@ void InputManager::destroy()
 
 void InputManager::update(Camera& camera, float deltaTime)
 {
-	const float cameraSpeed = 2.5f * deltaTime;
+	const float cameraSpeed = 1.5f * deltaTime;
 	if (isKeyPressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(m_window, true);
 	if(isKeyPressed(GLFW_KEY_W))

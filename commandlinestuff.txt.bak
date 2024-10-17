@@ -1,0 +1,40 @@
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.sc" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.bin" --platform windows -p 330 --type vertex
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\fragment_shader1.sc" --type fragment -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\fragment_shader1.bin" --platform windows -p 330
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\simplevert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\simplevert.bin" --platform windows -p 330 --type vertex
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.glsl" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vertex_shader1.bin" --platform windows -p 330 --type vertex --raw
+
+geometryc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\models\\cornell\\scene.gltf" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\cornellbox.bin" -c
+
+geometryc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\models\sponza\\scene.gltf" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\sponza.bin" -c
+
+
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vs_lighting.sc" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vs_lighting.bin" --type vertex--platform windows -p 150
+
+shaderc -f "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vs_lighting.sc" -o "F:\Files\College Stuff\programs\Repositories\BGFX_PROTOTYPE\vs_lighting.bin" --type vertex--platform windows -p 150
+
+
+
+_bgfx_shaderc_parse(
+                RESULT
+                FILE ${SHADER_FILE_ABSOLUTE}
+                OUTPUT ${SHADER_BUILD_DIR}/shaders/generated/${SHADER_FILE_BASENAME}.bin
+                ${EXT_TYPE}
+                ${SHADER_PLATFORM}
+                PROFILE ${PROFILE}
+                VARYING_DEF ${PROJECT_SOURCE_DIR}/shaders/varying.def.sc
+        )
+        message(${RESULT})
+        add_custom_command(
+                OUTPUT ${SHADER_BUILD_DIR}/shaders/generated/${SHADER_FILE_BASENAME}.bin
+                COMMAND shaderc ${RESULT} ${profile-sc} -O3
+                DEPENDS ${PROJECT_SOURCE_DIR}/shaders/varying.def.sc
+        )
+		
+		
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.bin" --platform windows --type vertex -p vs_5_0
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.bin" --platform windows --type fragment -p ps_5_0

@@ -96,6 +96,7 @@ bool ObjLoader::loadObj(const std::string& filepath,
 
                 indices.push_back(uniqueVertices[vertexData]);
             }
+            std::swap(indices[indices.size() - 2], indices[indices.size() - 1]);
         }
     }
 
@@ -131,6 +132,10 @@ void ObjLoader::computeNormals(std::vector<Vertex>& vertices, const std::vector<
             normal.y /= length;
             normal.z /= length;
         }
+
+		normal.x *= -1.0f;
+		normal.y *= -1.0f;
+		normal.z *= -1.0f;
 
         vertices[i0].nx += normal.x; vertices[i0].ny += normal.y; vertices[i0].nz += normal.z;
         vertices[i1].nx += normal.x; vertices[i1].ny += normal.y; vertices[i1].nz += normal.z;
