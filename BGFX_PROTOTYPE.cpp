@@ -6,7 +6,7 @@
 #include <fstream>
 #include "InputManager.h"
 #include "Camera.h"
-
+//#include "entry.h"
 
 #include "BGFX_PROTOTYPE.h"
 #include <bgfx/bgfx.h>
@@ -17,6 +17,7 @@
 #include <bx/math.h>
 #include <bx/readerwriter.h>
 #include <bx/string.h>
+
 
 
 
@@ -64,6 +65,21 @@ static const uint16_t cubeTriList[] =
     4, 5, 1,
     2, 3, 6,
     6, 3, 7,
+};
+
+struct Instance
+{
+    float position[3];
+    bgfx::VertexBufferHandle vertexBuffer;
+    bgfx::IndexBufferHandle indexBuffer;
+
+    Instance(float x, float y, float z, bgfx::VertexBufferHandle vbh, bgfx::IndexBufferHandle ibh)
+        : vertexBuffer(vbh), indexBuffer(ibh)
+    {
+        position[0] = x;
+        position[1] = y;
+        position[2] = z;
+    }
 };
 
 static bool s_showStats = false;
@@ -119,6 +135,8 @@ int main(void)
         glfwTerminate();
         return -1;
     }
+    //test here
+    //entry::getNativeDisplayHandle();
 
     glfwSetKeyCallback(window, glfw_keyCallback);
     InputManager::initialize(window);
@@ -184,6 +202,7 @@ int main(void)
 
     Camera camera;
 
+    std::vector<Instance> instances;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -191,8 +210,17 @@ int main(void)
         // Handle input
         InputManager::update(camera, 0.016f);
 
-        // Begin frame
-        bgfx::touch(0);
+        if (InputManager::isMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
+        {
+            // Position for new instance, e.g., random or predefined position
+            float x = (rand() % 20 - 10) * 0.5f; // Random position within a range
+            float y = 0.0f;
+            float z = (rand() % 20 - 10) * 0.5f;
+
+            // Create a new instance with the current vertex and index buffers
+            instances.emplace_back(x, y, z, vbh, ibh);
+            std::cout << "New instance created at (" << x << ", " << y << ", " << z << ")" << std::endl;
+        }
 
         // Set view and projection matrix
         float view[16];
@@ -207,6 +235,9 @@ int main(void)
         bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         bgfx::setTransform(mtx);
 
+        // Begin frame
+        bgfx::touch(0);
+
         // Create uniform handles for the light direction and color
         u_lightDir = bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
         u_lightColor = bgfx::createUniform("u_lightColor", bgfx::UniformType::Vec4);
@@ -216,6 +247,17 @@ int main(void)
         bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cel.bin");
         bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cel13.bin");
         bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
+
+        for (const auto& instance : instances)
+        {
+            float model[16];
+            bx::mtxTranslate(model, instance.position[0], instance.position[1], instance.position[2]);
+            bgfx::setTransform(model);
+
+            bgfx::setVertexBuffer(0, instance.vertexBuffer);
+            bgfx::setIndexBuffer(instance.indexBuffer);
+            bgfx::submit(0, program);
+        }
 
         // Update your vertex layout to include normals
         bgfx::VertexLayout layout;
@@ -234,7 +276,7 @@ int main(void)
 
         // In your render loop, before bgfx::submit:
         float lightDir[4] = { 0.0f, 0.0f, 1.0f, 0.0f }; // Light coming from top-back
-        float lightColor[4] = { 0.5f, 0.5f, 0.0f, 1.0f }; // White light
+        float lightColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f }; // White light
 		float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 1.0f };
 
         bgfx::setUniform(u_lightDir, lightDir);
@@ -244,7 +286,7 @@ int main(void)
         // Submit draw call
         bgfx::submit(0, program);
         
-        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 0.0f);
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         bgfx::setTransform(mtx);
 
         // Debug text
@@ -258,6 +300,12 @@ int main(void)
 
         // End frame
         bgfx::frame();
+    }
+
+    for (const auto& instance : instances)
+    {
+        bgfx::destroy(instance.vertexBuffer);
+        bgfx::destroy(instance.indexBuffer);
     }
 
     // Cleanup

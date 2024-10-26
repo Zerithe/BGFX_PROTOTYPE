@@ -1,10 +1,13 @@
 #include "InputManager.h"
+#include "ObjLoader.h"
 #include <iostream>
 
 GLFWwindow* InputManager::m_window = nullptr;
 double InputManager::m_mouseX = 0.0;
 double InputManager::m_mouseY = 0.0;
 bool InputManager::m_FirstMouse = true;
+bool InputManager::isCursorDisabled = true;
+std::unordered_map<int, bool> InputManager::keyStates;
 
 void InputManager::initialize(GLFWwindow* window)
 {
@@ -18,7 +21,7 @@ void InputManager::destroy()
 
 void InputManager::update(Camera& camera, float deltaTime)
 {
-	const float cameraSpeed = 1.5f * deltaTime;
+	const float cameraSpeed = 2.5f * deltaTime;
 	if (isKeyPressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(m_window, true);
 	if(isKeyPressed(GLFW_KEY_W))
@@ -33,10 +36,16 @@ void InputManager::update(Camera& camera, float deltaTime)
 		camera.position = bx::mad(camera.up, bx::Vec3(cameraSpeed, cameraSpeed, cameraSpeed), camera.position);
 	if (isKeyPressed(GLFW_KEY_LEFT_SHIFT))
 		camera.position = bx::mad(camera.up, bx::Vec3(-cameraSpeed, -cameraSpeed, -cameraSpeed), camera.position);
+	if (isKeyToggled(GLFW_KEY_P))
+	{
+		isCursorDisabled = !isCursorDisabled;
+		std::cout << "Cursor disabled: " << isCursorDisabled << std::endl;
+	}
 
+	
 	double x, y;
 	getMouseMovement(&x, &y);
-	const float sensitivity = 0.1f;
+	const float sensitivity = 0.01f;
 	camera.yaw -= x * sensitivity;
 	camera.pitch += y * sensitivity;
 
@@ -51,12 +60,51 @@ void InputManager::update(Camera& camera, float deltaTime)
 	camera.right = bx::normalize(bx::cross(camera.front, bx::Vec3(0.0f, 1.0f, 0.0f)));
 	camera.up = bx::normalize(bx::cross(camera.right, camera.front));
 
+	if (isCursorDisabled)
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 }
 
 bool InputManager::isKeyPressed(int key)
 {
 	return glfwGetKey(m_window, key) == GLFW_PRESS;
 }
+
+bool InputManager::isKeyToggled(int key)
+{
+	bool isPressed = glfwGetKey(m_window, key) == GLFW_PRESS;
+	if (isPressed && !keyStates[key])
+	{
+		keyStates[key] = true;
+		return true;
+	}
+	else if (!isPressed)
+	{
+		keyStates[key] = false;
+	}
+	return false;
+}
+
+bool InputManager::isMouseClicked(int key)
+{
+	bool isPressed = glfwGetMouseButton(m_window, key) == GLFW_PRESS;
+	if (isPressed && !keyStates[key])
+	{
+		keyStates[key] = true;
+		return true;
+	}
+	else if (!isPressed)
+	{
+		keyStates[key] = false;
+	}
+	return false;
+}
+
 
 void InputManager::getMouseMovement(double* x, double* y)
 {
