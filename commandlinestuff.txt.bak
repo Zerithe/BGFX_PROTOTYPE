@@ -35,6 +35,27 @@ _bgfx_shaderc_parse(
         )
 		
 		
-shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.bin" --platform windows --type vertex -p vs_5_0
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.bin" --platform windows --type vertex 
 
-shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.bin" --platform windows --type fragment -p ps_5_0
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.bin" --platform windows --type fragment
+
+"entry.cpp" 
+"entry.h"
+"entry_p.h"
+"dbg.h"
+"cmd.cpp"
+"cmd.h"
+"dialog.cpp"
+"entry_android.cpp"
+"entry_glfw.cpp"
+"entry_html5.cpp"
+"entry_noop.cpp"
+"entry_sdl.cpp"
+"entry_windows.cpp"
+"entry_x11.cpp"
+"input.cpp"
+"input.h"
+"dialog_darwin.mm"
+"dialog.h"
+"entry_ios.mm"
+"entry_osx.mm"

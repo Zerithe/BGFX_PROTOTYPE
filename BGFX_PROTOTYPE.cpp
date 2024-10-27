@@ -18,7 +18,9 @@
 #include <bx/readerwriter.h>
 #include <bx/string.h>
 
-
+#include <bgfx/defines.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
 
 
 #include <GLFW/glfw3.h>
@@ -67,6 +69,20 @@ static const uint16_t cubeTriList[] =
     6, 3, 7,
 };
 
+static PosColorVertex planeVertices[] =
+{
+    { -10.0f, -5.0f, -10.0f, 0xff888888 },  // Bottom-left
+    {  10.0f, -5.0f, -10.0f, 0xff888888 },  // Bottom-right
+    { -10.0f, -5.0f,  10.0f, 0xff888888 },  // Top-left
+    {  10.0f, -5.0f,  10.0f, 0xff888888 },  // Top-right
+};
+
+static const uint16_t planeIndices[] =
+{
+    0, 1, 2,  // First triangle
+    1, 3, 2   // Second triangle
+};
+
 struct Instance
 {
     float position[3];
@@ -112,7 +128,7 @@ bgfx::ShaderHandle loadShader(const char* shaderPath)
     file.read(buffer.data(), fileSize);
 
     const bgfx::Memory* mem = bgfx::copy(buffer.data(), static_cast<uint32_t>(fileSize));
-    std::cout << "Shader loaded: " << shaderPath << std::endl;
+    //std::cout << "Shader loaded: " << shaderPath << std::endl;
     return bgfx::createShader(mem);
 }
 
@@ -157,6 +173,10 @@ int main(void)
         return -1;
     }
 
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    
+
     // Enable debug output
     bgfx::setDebug(BGFX_DEBUG_TEXT); // <-- Add this line here
 
@@ -165,15 +185,17 @@ int main(void)
 
 
     // Load shaders
-    /*bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
+    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
     bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cubes.bin");
-    bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);*/
+    bgfx::ProgramHandle defaultProgram = bgfx::createProgram(vsh, fsh, true);
 
     /*if (!bgfx::isValid(program)) {
         std::cerr << "Failed to create shader program" << std::endl;
         return -1;
     }*/
+    
 
+    //cube render
     bgfx::VertexLayout layout;
     layout.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
@@ -187,6 +209,16 @@ int main(void)
 
     bgfx::IndexBufferHandle ibh_cube = bgfx::createIndexBuffer(
         bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
+    );
+    
+    //plane render
+    bgfx::VertexBufferHandle vbh_plane = bgfx::createVertexBuffer(
+        bgfx::makeRef(planeVertices, sizeof(planeVertices)),
+        layout
+    );
+
+    bgfx::IndexBufferHandle ibh_plane = bgfx::createIndexBuffer(
+        bgfx::makeRef(planeIndices, sizeof(planeIndices))
     );
 
     // Load OBJ file
@@ -212,14 +244,22 @@ int main(void)
 
         if (InputManager::isMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
         {
+
+            float spawnDistance = 5.0f;
             // Position for new instance, e.g., random or predefined position
-            float x = (rand() % 20 - 10) * 0.5f; // Random position within a range
-            float y = 0.0f;
-            float z = (rand() % 20 - 10) * 0.5f;
+            float x = camera.position.x + camera.front.x * spawnDistance;
+            float y = camera.position.y + camera.front.y * spawnDistance;
+            float z = camera.position.z + camera.front.z * spawnDistance;
 
             // Create a new instance with the current vertex and index buffers
             instances.emplace_back(x, y, z, vbh, ibh);
             std::cout << "New instance created at (" << x << ", " << y << ", " << z << ")" << std::endl;
+        }
+
+        if (InputManager::isMouseClicked(GLFW_MOUSE_BUTTON_RIGHT) && !instances.empty())
+        {
+            instances.pop_back();
+            std::cout << "Last instance deleted" << std::endl;
         }
 
         // Set view and projection matrix
@@ -245,13 +285,53 @@ int main(void)
 
         // Load the cel shading shaders instead of the current cubes shaders
         bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cel.bin");
-        bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cel13.bin");
+        bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\hatchfrag20.bin");
         bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
+
+        float planeModel[16];
+        bx::mtxIdentity(planeModel);
+        bgfx::setTransform(planeModel);
+        bgfx::setVertexBuffer(0, vbh_plane);
+        bgfx::setIndexBuffer(ibh_plane);
+        bgfx::submit(0, defaultProgram);
+
+        /*for (const auto& instance : instances)
+        {
+            float model[16];
+            bx::mtxTranslate(model, instance.position[0], instance.position[1], instance.position[2]);
+            bgfx::setTransform(model);
+
+            bgfx::setVertexBuffer(0, instance.vertexBuffer);
+            bgfx::setIndexBuffer(instance.indexBuffer);
+            bgfx::submit(0, program);
+        }*/
 
         for (const auto& instance : instances)
         {
             float model[16];
-            bx::mtxTranslate(model, instance.position[0], instance.position[1], instance.position[2]);
+            // Calculate the forward vector pointing towards the camera
+            bx::Vec3 modelToCamera = bx::normalize(bx::Vec3(camera.position.x - instance.position[0],
+                camera.position.y - instance.position[1],
+                camera.position.z - instance.position[2]));
+
+
+            // Define the up vector
+            bx::Vec3 up = { 0.0f, 1.0f, 0.0f };
+
+            // Calculate the right vector (orthogonal to forward and up)
+            bx::Vec3 right = bx::normalize(bx::cross(up, modelToCamera));
+
+            // Recalculate the up vector to ensure orthogonality
+            up = bx::normalize(bx::cross(modelToCamera, right));
+
+            // Build the model matrix with the orientation facing the camera
+            model[0] = right.x;   model[1] = right.y;   model[2] = right.z;   model[3] = 0.0f;
+            model[4] = up.x;      model[5] = up.y;      model[6] = up.z;      model[7] = 0.0f;
+            model[8] = modelToCamera.x; model[9] = modelToCamera.y; model[10] = modelToCamera.z; model[11] = 0.0f;
+            model[12] = instance.position[0];
+            model[13] = instance.position[1];
+            model[14] = instance.position[2];
+            model[15] = 1.0f;
             bgfx::setTransform(model);
 
             bgfx::setVertexBuffer(0, instance.vertexBuffer);
@@ -275,13 +355,14 @@ int main(void)
         bgfx::setIndexBuffer(ibh);
 
         // In your render loop, before bgfx::submit:
-        float lightDir[4] = { 0.0f, 0.0f, 1.0f, 0.0f }; // Light coming from top-back
-        float lightColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f }; // White light
+        float lightDir[4] = { 0.0f, 1.0f, 1.0f, 0.0f }; 
+        float lightColor[4] = { 0.5f, 0.5f, 1.0f, 1.0f }; // White light
 		float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 1.0f };
 
         bgfx::setUniform(u_lightDir, lightDir);
         bgfx::setUniform(u_lightColor, lightColor);
 		bgfx::setUniform(u_viewPos, viewPos);
+
 
         // Submit draw call
         bgfx::submit(0, program);
