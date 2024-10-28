@@ -44,7 +44,6 @@ void main() {
     float line4 = abs(sin((uv.x - uv.y) * 3.1415 * 0.707)); // Anti-diagonal lines
 	
 	
-	
     // Combine the line patterns to create a crosshatch effect
     float combinedHatch = min(line3, line4);
     

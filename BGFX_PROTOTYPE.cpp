@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <random>
 #include "InputManager.h"
 #include "Camera.h"
 //#include "entry.h"
@@ -98,6 +99,15 @@ struct Instance
     }
 };
 
+float getRandomFloat()
+{
+    static std::random_device rd;  // Seed for random number engine
+    static std::mt19937 gen(rd()); // Mersenne Twister engine
+    static std::uniform_real_distribution<float> dist(0.0f, 1.0f); // Distribution range [0.0, 1.0]
+
+    return dist(gen);
+}
+
 static bool s_showStats = false;
 
 static void glfw_errorCallback(int error, const char* description)
@@ -135,6 +145,20 @@ bgfx::ShaderHandle loadShader(const char* shaderPath)
 bgfx::UniformHandle u_lightDir;
 bgfx::UniformHandle u_lightColor;
 bgfx::UniformHandle u_viewPos;
+
+static void spawnInstance(Camera camera, bgfx::VertexBufferHandle vbh, bgfx::IndexBufferHandle ibh, std::vector<Instance>& instances)
+{
+
+    float spawnDistance = 5.0f;
+    // Position for new instance, e.g., random or predefined position
+    float x = camera.position.x + camera.front.x * spawnDistance;
+    float y = camera.position.y + camera.front.y * spawnDistance;
+    float z = camera.position.z + camera.front.z * spawnDistance;
+
+    // Create a new instance with the current vertex and index buffers
+    instances.emplace_back(x, y, z, vbh, ibh);
+    std::cout << "New instance created at (" << x << ", " << y << ", " << z << ")" << std::endl;
+}
 
 int main(void)
 {
@@ -185,8 +209,8 @@ int main(void)
 
 
     // Load shaders
-    bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cubes.bin");
-    bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\fs_cubes.bin");
+    bgfx::ShaderHandle vsh = loadShader("shaderout\\vs_cubes.bin");
+    bgfx::ShaderHandle fsh = loadShader("shaderout\\fs_cubes.bin");
     bgfx::ProgramHandle defaultProgram = bgfx::createProgram(vsh, fsh, true);
 
     /*if (!bgfx::isValid(program)) {
@@ -222,19 +246,58 @@ int main(void)
     );
 
     // Load OBJ file
-    std::vector<ObjLoader::Vertex> vertices;
-    std::vector<uint16_t> indices;
-    if (!ObjLoader::loadObj("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\suzanne.obj", vertices, indices)) {
+    std::vector<ObjLoader::Vertex> suzanneVertices;
+    std::vector<uint16_t> suzanneIndices;
+    if (!ObjLoader::loadObj("meshes\\suzanne.obj", suzanneVertices, suzanneIndices)) {
         std::cerr << "Failed to load OBJ file" << std::endl;
         return -1;
     }
 
-    bgfx::VertexBufferHandle vbh = ObjLoader::createVertexBuffer(vertices);
-    bgfx::IndexBufferHandle ibh = ObjLoader::createIndexBuffer(indices);
+    bgfx::VertexBufferHandle suzanneVbh = ObjLoader::createVertexBuffer(suzanneVertices);
+    bgfx::IndexBufferHandle suzanneIbh = ObjLoader::createIndexBuffer(suzanneIndices);
+    
+
+    std::vector<ObjLoader::Vertex> bunnyVertices;
+    std::vector<uint16_t> bunnyIndices;
+    if (!ObjLoader::loadObj("meshes\\bunny.obj", bunnyVertices, bunnyIndices)) {
+        std::cerr << "Failed to load OBJ file" << std::endl;
+        return -1;
+    }
+
+    bgfx::VertexBufferHandle bunnyVbh = ObjLoader::createVertexBuffer(bunnyVertices);
+    bgfx::IndexBufferHandle bunnyIbh = ObjLoader::createIndexBuffer(bunnyIndices);
+
+    std::vector<ObjLoader::Vertex> CornellVertices;
+	std::vector<uint16_t> CornellIndices;
+	if (!ObjLoader::loadObj("meshes\\\cornell-box.obj", CornellVertices, CornellIndices)) {
+		std::cerr << "Failed to load OBJ file" << std::endl;
+		return -1;
+	}
+
+	bgfx::VertexBufferHandle CornellVbh = ObjLoader::createVertexBuffer(CornellVertices);
+	bgfx::IndexBufferHandle CornellIbh = ObjLoader::createIndexBuffer(CornellIndices);
+
+	std::vector<ObjLoader::Vertex> armadilloVertices;
+	std::vector<uint16_t> armadilloIndices;
+	if (!ObjLoader::loadObj("meshes\\armadillo.obj", armadilloVertices, armadilloIndices)) {
+		std::cerr << "Failed to load OBJ file" << std::endl;
+		return -1;
+	}
+
+	bgfx::VertexBufferHandle armadilloVbh = ObjLoader::createVertexBuffer(armadilloVertices);
+	bgfx::IndexBufferHandle armadilloIbh = ObjLoader::createIndexBuffer(armadilloIndices);
 
     Camera camera;
 
     std::vector<Instance> instances;
+
+    bool modelMovement = true;
+
+	int shaderVariant = 0;
+
+    float lightColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
+    float lightDir[4] = { 0.0f, 1.0f, 1.0f, 0.0f };
+
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -242,19 +305,82 @@ int main(void)
         // Handle input
         InputManager::update(camera, 0.016f);
 
-        if (InputManager::isMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
+        if (InputManager::isKeyToggled(GLFW_KEY_1))
         {
 
-            float spawnDistance = 5.0f;
-            // Position for new instance, e.g., random or predefined position
-            float x = camera.position.x + camera.front.x * spawnDistance;
-            float y = camera.position.y + camera.front.y * spawnDistance;
-            float z = camera.position.z + camera.front.z * spawnDistance;
-
-            // Create a new instance with the current vertex and index buffers
-            instances.emplace_back(x, y, z, vbh, ibh);
-            std::cout << "New instance created at (" << x << ", " << y << ", " << z << ")" << std::endl;
+			spawnInstance(camera, suzanneVbh, suzanneIbh, instances);
         }
+		if (InputManager::isKeyToggled(GLFW_KEY_2))
+		{
+			spawnInstance(camera, bunnyVbh, bunnyIbh, instances);
+		}
+		if (InputManager::isKeyToggled(GLFW_KEY_3))
+		{
+			spawnInstance(camera, vbh_cube, ibh_cube, instances);
+		} 
+		if (InputManager::isKeyToggled(GLFW_KEY_4))
+		{
+			spawnInstance(camera, CornellVbh, CornellIbh, instances);
+		}
+		if (InputManager::isKeyToggled(GLFW_KEY_5))
+		{
+			spawnInstance(camera, armadilloVbh, armadilloIbh, instances);
+		}
+        
+        
+        if (InputManager::isKeyToggled(GLFW_KEY_M)) 
+        {
+			modelMovement = !modelMovement;
+			std::cout << "Model movement: " << modelMovement << std::endl;
+        }
+
+        if (InputManager::isKeyToggled(GLFW_KEY_H))
+        {
+			if ((shaderVariant + 1) > 4)
+			{
+				shaderVariant = 0;
+			}
+			else
+			{
+				shaderVariant++;
+			}
+        }
+        
+        if (InputManager::isKeyToggled(GLFW_KEY_C))
+        {
+            lightColor[0] = getRandomFloat(); // Random red
+            lightColor[1] = getRandomFloat(); // Random green
+            lightColor[2] = getRandomFloat(); // Random blue
+			lightColor[3] = 1.0f;
+
+        }
+
+        if (InputManager::isKeyToggled(GLFW_KEY_X))
+        {
+            lightColor[0] = 0.5f;
+            lightColor[1] = 0.5f; 
+            lightColor[2] = 0.5f; 
+            lightColor[3] = 1.0f;
+        }
+
+        if (InputManager::isKeyToggled(GLFW_KEY_V))
+        {
+            lightDir[0] = getRandomFloat();
+			lightDir[1] = getRandomFloat();
+			lightDir[2] = getRandomFloat();
+			lightDir[3] = 0.0f;
+        }
+
+        if (InputManager::isKeyToggled(GLFW_KEY_Z))
+        {
+            lightColor[0] = 0.0f;
+            lightColor[1] = 1.0f;
+            lightColor[2] = 1.0f;
+            lightColor[3] = 0.0f;
+        }
+
+
+
 
         if (InputManager::isMouseClicked(GLFW_MOUSE_BUTTON_RIGHT) && !instances.empty())
         {
@@ -278,15 +404,51 @@ int main(void)
         // Begin frame
         bgfx::touch(0);
 
+        
+        float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 1.0f };
+
+        bgfx::setUniform(u_lightDir, lightDir);
+        bgfx::setUniform(u_lightColor, lightColor);
+        bgfx::setUniform(u_viewPos, viewPos);
+
         // Create uniform handles for the light direction and color
         u_lightDir = bgfx::createUniform("u_lightDir", bgfx::UniformType::Vec4);
         u_lightColor = bgfx::createUniform("u_lightColor", bgfx::UniformType::Vec4);
         u_viewPos = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
 
-        // Load the cel shading shaders instead of the current cubes shaders
-        bgfx::ShaderHandle vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cel.bin");
-        bgfx::ShaderHandle fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\hatchfrag20.bin");
+        // Load the crosshatching shaders instead of the current cubes shaders
+        bgfx::ShaderHandle vsh = loadShader("shaderout\\vs_cel.bin");
+        bgfx::ShaderHandle fsh = loadShader("shaderout\\hatchfrag20.bin");
         bgfx::ProgramHandle program = bgfx::createProgram(vsh, fsh, true);
+
+        if (shaderVariant == 0) 
+        {
+            /*vsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\vs_cel.bin");
+            fsh = loadShader("F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\crosshatching_frag_variant1.bin");
+            program = bgfx::createProgram(vsh, fsh, true);*/
+
+            vsh = loadShader("shaderout\\vs_cel.bin");
+            fsh = loadShader("shaderout\\crosshatching_frag_variant1.bin");
+            program = bgfx::createProgram(vsh, fsh, true);
+		}
+		else if (shaderVariant == 1)
+		{
+			vsh = loadShader("shaderout\\vs_cel.bin");
+			fsh = loadShader("shaderout\\crosshatching_frag_variant2.bin");
+			program = bgfx::createProgram(vsh, fsh, true);
+		}
+		else if (shaderVariant == 2)
+		{
+			vsh = loadShader("shaderout\\vs_cel.bin");
+			fsh = loadShader("shaderout\\crosshatching_frag_variant3.bin");
+			program = bgfx::createProgram(vsh, fsh, true);
+		}
+		else if (shaderVariant == 3)
+		{
+			vsh = loadShader("shaderout\\vs_cel.bin");
+			fsh = loadShader("shaderout\\fs_cel.bin");
+			program = bgfx::createProgram(vsh, fsh, true);
+		}
 
         float planeModel[16];
         bx::mtxIdentity(planeModel);
@@ -306,37 +468,53 @@ int main(void)
             bgfx::submit(0, program);
         }*/
 
-        for (const auto& instance : instances)
+        if (modelMovement)
         {
-            float model[16];
-            // Calculate the forward vector pointing towards the camera
-            bx::Vec3 modelToCamera = bx::normalize(bx::Vec3(camera.position.x - instance.position[0],
-                camera.position.y - instance.position[1],
-                camera.position.z - instance.position[2]));
+            for (const auto& instance : instances)
+            {
+                float model[16];
+                // Calculate the forward vector pointing towards the camera
+                bx::Vec3 modelToCamera = bx::normalize(bx::Vec3(camera.position.x - instance.position[0],
+                    camera.position.y - instance.position[1],
+                    camera.position.z - instance.position[2]));
 
 
-            // Define the up vector
-            bx::Vec3 up = { 0.0f, 1.0f, 0.0f };
+                // Define the up vector
+                bx::Vec3 up = { 0.0f, 1.0f, 0.0f };
 
-            // Calculate the right vector (orthogonal to forward and up)
-            bx::Vec3 right = bx::normalize(bx::cross(up, modelToCamera));
+                // Calculate the right vector (orthogonal to forward and up)
+                bx::Vec3 right = bx::normalize(bx::cross(up, modelToCamera));
 
-            // Recalculate the up vector to ensure orthogonality
-            up = bx::normalize(bx::cross(modelToCamera, right));
+                // Recalculate the up vector to ensure orthogonality
+                up = bx::normalize(bx::cross(modelToCamera, right));
 
-            // Build the model matrix with the orientation facing the camera
-            model[0] = right.x;   model[1] = right.y;   model[2] = right.z;   model[3] = 0.0f;
-            model[4] = up.x;      model[5] = up.y;      model[6] = up.z;      model[7] = 0.0f;
-            model[8] = modelToCamera.x; model[9] = modelToCamera.y; model[10] = modelToCamera.z; model[11] = 0.0f;
-            model[12] = instance.position[0];
-            model[13] = instance.position[1];
-            model[14] = instance.position[2];
-            model[15] = 1.0f;
-            bgfx::setTransform(model);
+                // Build the model matrix with the orientation facing the camera
+                model[0] = right.x;   model[1] = right.y;   model[2] = right.z;   model[3] = 0.0f;
+                model[4] = up.x;      model[5] = up.y;      model[6] = up.z;      model[7] = 0.0f;
+                model[8] = modelToCamera.x; model[9] = modelToCamera.y; model[10] = modelToCamera.z; model[11] = 0.0f;
+                model[12] = instance.position[0];
+                model[13] = instance.position[1];
+                model[14] = instance.position[2];
+                model[15] = 1.0f;
+                bgfx::setTransform(model);
 
-            bgfx::setVertexBuffer(0, instance.vertexBuffer);
-            bgfx::setIndexBuffer(instance.indexBuffer);
-            bgfx::submit(0, program);
+                bgfx::setVertexBuffer(0, instance.vertexBuffer);
+                bgfx::setIndexBuffer(instance.indexBuffer);
+                bgfx::submit(0, program);
+            }
+        }
+        else 
+        {
+            for (const auto& instance : instances)
+            {
+                float model[16];
+                bx::mtxTranslate(model, instance.position[0], instance.position[1], instance.position[2]);
+                bgfx::setTransform(model);
+
+                bgfx::setVertexBuffer(0, instance.vertexBuffer);
+                bgfx::setIndexBuffer(instance.indexBuffer);
+                bgfx::submit(0, program);
+            }
         }
 
         // Update your vertex layout to include normals
@@ -348,33 +526,78 @@ int main(void)
 
 
 
-        // Set vertex and index buffers
-        //bgfx::setVertexBuffer(0, vbh_cube);
-        //bgfx::setIndexBuffer(ibh_cube);
-        bgfx::setVertexBuffer(0, vbh);
-        bgfx::setIndexBuffer(ibh);
+        bgfx::setVertexBuffer(0, suzanneVbh);
+        bgfx::setIndexBuffer(suzanneIbh);
 
-        // In your render loop, before bgfx::submit:
-        float lightDir[4] = { 0.0f, 1.0f, 1.0f, 0.0f }; 
-        float lightColor[4] = { 0.5f, 0.5f, 1.0f, 1.0f }; // White light
-		float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 1.0f };
 
-        bgfx::setUniform(u_lightDir, lightDir);
-        bgfx::setUniform(u_lightColor, lightColor);
-		bgfx::setUniform(u_viewPos, viewPos);
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 8.0f, -4.0f, -7.0f);
+        bgfx::setTransform(mtx);
 
+        // Submit draw call
+        bgfx::submit(0, program);
+
+        bgfx::setVertexBuffer(0, bunnyVbh);
+        bgfx::setIndexBuffer(bunnyIbh);
+
+
+        bx::mtxSRT(mtx, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 0.0f, 5.0f, -4.0f, -7.0f);
+        bgfx::setTransform(mtx);
+
+        // Submit draw call
+        bgfx::submit(0, program);
+
+        bgfx::setVertexBuffer(0, vbh_cube);
+        bgfx::setIndexBuffer(ibh_cube);
+
+
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 2.0f, -4.0f, -7.0f);
+        bgfx::setTransform(mtx);
+
+        // Submit draw call
+        bgfx::submit(0, program);
+
+        bgfx::setVertexBuffer(0, CornellVbh);
+        bgfx::setIndexBuffer(CornellIbh);
+
+
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, -2.0f, -4.0f, -7.0f);
+        bgfx::setTransform(mtx);
+
+        // Submit draw call
+        bgfx::submit(0, program);
+
+        bgfx::setVertexBuffer(0, armadilloVbh);
+        bgfx::setIndexBuffer(armadilloIbh);
+
+
+        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 3.0f, 0.0f, 0.0f, 0.0f, -50.0f);
+        bgfx::setTransform(mtx);
 
         // Submit draw call
         bgfx::submit(0, program);
         
-        bx::mtxSRT(mtx, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-        bgfx::setTransform(mtx);
 
         // Debug text
         bgfx::dbgTextClear();
-        bgfx::dbgTextPrintf(0, 1, 0x4f, "bgfx/examples/01-cubes");
-        bgfx::dbgTextPrintf(0, 2, 0x6f, "Description: Rendering simple static mesh.");
+        bgfx::dbgTextPrintf(0, 1, 0x4f, "Crosshatching Prototype");
+        bgfx::dbgTextPrintf(0, 2, 0x6f, "Description: Simple 3D Prototype for Crosshatching shaders.");
         bgfx::dbgTextPrintf(0, 3, 0x0f, "Frame: % 7.3f[ms]", 1000.0f / bgfx::getStats()->cpuTimeFrame);
+        bgfx::dbgTextPrintf(0, 4, 0x0f, "Controls: ");
+		bgfx::dbgTextPrintf(0, 5, 0x0f, "WASD - Move camera");
+		bgfx::dbgTextPrintf(0, 6, 0x0f, "Mouse - Look around");
+		bgfx::dbgTextPrintf(0, 7, 0x0f, "Left Shift - Move down");
+		bgfx::dbgTextPrintf(0, 8, 0x0f, "Space - Move up");
+		bgfx::dbgTextPrintf(0, 9, 0x0f, "1-5 - Create new instance");
+		bgfx::dbgTextPrintf(0, 10, 0x0f, "Right Click - Delete last instance");
+        bgfx::dbgTextPrintf(0, 11, 0x0f, "M - Toggle Object Movement");
+        bgfx::dbgTextPrintf(0, 12, 0x0f, "H - Change Shader Variant");
+        bgfx::dbgTextPrintf(0, 13, 0x0f, "P - Unlock/Lock Cursor");
+		bgfx::dbgTextPrintf(0, 14, 0x0f, "C - Randomize Light Color");
+		bgfx::dbgTextPrintf(0, 15, 0x0f, "X - Reset Light Color");
+		bgfx::dbgTextPrintf(0, 16, 0x0f, "V - Randomize Light Direction");
+		bgfx::dbgTextPrintf(0, 17, 0x0f, "Z - Reset Light Direction");
+		bgfx::dbgTextPrintf(0, 32, 0x0f, "F1 - Toggle stats");
+
 
         // Enable stats or debug text
         bgfx::setDebug(s_showStats ? BGFX_DEBUG_STATS : BGFX_DEBUG_TEXT);
@@ -390,9 +613,19 @@ int main(void)
     }
 
     // Cleanup
-    bgfx::destroy(vbh);
-    bgfx::destroy(ibh);
-    //bgfx::destroy(program);
+    bgfx::destroy(suzanneVbh);
+    bgfx::destroy(suzanneIbh);
+	bgfx::destroy(bunnyVbh);
+	bgfx::destroy(bunnyIbh);
+	bgfx::destroy(vbh_cube);
+	bgfx::destroy(ibh_cube);
+	bgfx::destroy(vbh_plane);
+	bgfx::destroy(ibh_plane);
+	bgfx::destroy(defaultProgram);
+	bgfx::destroy(u_lightDir);
+	bgfx::destroy(u_lightColor);
+	bgfx::destroy(u_viewPos);
+
 
     bgfx::shutdown();
     glfwDestroyWindow(window);

@@ -37,7 +37,15 @@ _bgfx_shaderc_parse(
 		
 shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_vert.bin" --platform windows --type vertex 
 
-shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\hatchtest2\\crosshatch_frag.bin" --platform windows --type fragment
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\test20\\hatchfrag20.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\hatchfrag20.bin" --platform windows --type fragment -p 440
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\test21\\hatchfrag21.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\hatchfrag21.bin" --platform windows --type fragment -p 440
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\finaltests\\crosshatching_frag_variant1.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\crosshatching_frag_variant1.bin" --platform windows --type fragment -p 440
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\finaltests\\crosshatching_frag_variant2.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\crosshatching_frag_variant1.bin" --platform windows --type fragment -p 440
+
+shaderc -f "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\shaders\\finaltests\\crosshatching_frag_variant3.sc" -o "F:\\Files\\College Stuff\\programs\\Repositories\\BGFX_PROTOTYPE\\crosshatching_frag_variant1.bin" --platform windows --type fragment -p 440
 
 "entry.cpp" 
 "entry.h"

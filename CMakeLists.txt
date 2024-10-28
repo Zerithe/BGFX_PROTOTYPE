@@ -13,6 +13,8 @@ endif()
 
 project ("BGFX_PROTOTYPE")
 
+
+
 # Add source to this project's executable.
 add_executable (BGFX_PROTOTYPE
 "BGFX_PROTOTYPE.cpp" 
@@ -24,6 +26,17 @@ add_executable (BGFX_PROTOTYPE
 "ObjLoader.h" 
  "Utility.cpp" 
  "Utility.h")
+
+ADD_CUSTOM_TARGET(
+    copy_shader_files
+    ${CMAKE_COMMAND}
+    -D SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -D DESTINATION_DIR=${CMAKE_CURRENT_BINARY_DIR}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CopyFile.cmake
+    COMMENT "Copying Files for target: BGFX_PROTOTYPE" VERBATIM 
+    )
+
+ADD_DEPENDENCIES ( BGFX_PROTOTYPE copy_shader_files )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET BGFX_PROTOTYPE PROPERTY CXX_STANDARD 20)
