@@ -1,6 +1,14 @@
 # BGFX_PROTOTYPE
 
-## SETUP
+## DESCRIPTION
+
+BGFX_PROTOTYPE is a simple project that uses bgfx and glfw to render cross hatching shaders with editing functions.
+
+### Working build can be found at:
+
+[Google Drive](https://drive.google.com/drive/u/1/folders/1B-ybRA0cXFT7n0vSWxDYO7zPv6f0cQ1i)
+
+## SETUP 
 
 ### bgfx.cmake
 
@@ -24,20 +32,13 @@ cmake -S. -Bcmake-build
 cmake --build cmake-build
 ```
 
+### imgui
+
+- inside the root directory input the following commands:
+```
+git clone https://github.com/ocornut/imgui
+```
+
 ### run through VS2022
 
-## Goals
-
-- Convert shader files to binary format and load them in the program.
-- Convert mesh objects to compatible format and load them in the program.
-- ~~Add Inputs for the camera.~~
-
-**Bonus:**
-- Add input for adding cubes in the scene.
-
-## Notes
-
-*add here for others to see*
-
-- `Jo` change directory for shader files in main. Don't know why it doesn't work with relative path.
-
+*if setup does not work, use working build in the google drive link*
